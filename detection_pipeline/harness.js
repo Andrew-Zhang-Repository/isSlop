@@ -67,6 +67,7 @@ const verdict = (r) => {
 
 const FILES = ["/tests/a1.png", "/tests/a2.png", "/tests/h1.png", "/tests/h2.png"];
 const rows = [];
+/*
 for (const url of FILES) {
   const t0 = performance.now();
   const r = await call({ kind: "aid:infer", url });
@@ -77,5 +78,20 @@ for (const url of FILES) {
     ep: r?.ep ?? "-", ms: r?.ms ?? "-", wallMs: Math.round(performance.now() - t0),
   });
   log(`${rows.at(-1).file.padEnd(9)} ${rows.at(-1).verdict.padEnd(12)} score=${rows.at(-1).score} tta=${rows.at(-1).tta} degraded=${rows.at(-1).degraded} block=${rows.at(-1).block} d12=${rows.at(-1).d12} ${rows.at(-1).ms}ms`);
+}
+console.table(rows);
+*/
+
+async function processImage(url){
+  const t0 = performance.now();
+  const r = await call({ kind: "aid:infer", url });
+  rows.push({
+    file: url.split("/").pop(), verdict: verdict(r),
+    score: r?.ok ? r.score.toFixed(4) : "-", tta: r?.tta ?? "-", degraded: r?.degraded ?? "-",
+    block: r?.quality?.block ?? "-", d12: r?.quality?.d12 ?? "-",
+    ep: r?.ep ?? "-", ms: r?.ms ?? "-", wallMs: Math.round(performance.now() - t0),
+  });
+  log(`${rows.at(-1).file.padEnd(9)} ${rows.at(-1).verdict.padEnd(12)} score=${rows.at(-1).score} tta=${rows.at(-1).tta} degraded=${rows.at(-1).degraded} block=${rows.at(-1).block} d12=${rows.at(-1).d12} ${rows.at(-1).ms}ms`);
+
 }
 console.table(rows);
