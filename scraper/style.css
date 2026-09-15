@@ -33,11 +33,11 @@
 
 
 img.ai-image-grayed {
-  filter: grayscale(100%) opacity(40%);
+  filter: grayscale(100%) opacity(0%);
   transition: filter 0.3s ease;
 }
 
 
 img.ai-image-grayed:hover {
-  filter: grayscale(0%) opacity(100%);
+  filter: grayscale(0%) opacity(40%);
 }

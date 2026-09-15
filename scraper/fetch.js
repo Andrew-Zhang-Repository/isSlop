@@ -45,7 +45,6 @@ async function processImage(img){
             return;
         }
 
-        // 4. Update the dataset status
         const isAi = r.score >= THRESHOLD && !r.degraded;
         if (isAi == true){
             img.dataset.aiStatus = "ai"
@@ -55,6 +54,7 @@ async function processImage(img){
         }
 
         attachBadge(r.score,img,isAi);
+        updateVisuals(img,isAi);
     }
     catch(error){
         console.error("Inference failed for", url, err);
