@@ -3,64 +3,64 @@ import {call} from "../detection_pipeline/harness"
 const THRESHOLD = 0.65;
 let config = { grayOutAi: true };
 
-function img_find() {
-    var imgs = Array.from(document.getElementsByTagName('img'));
-    var filtered = imgs.filter(img => {
+const overlayLayer = document.createElement("div");
+overlayLayer.id = "ai-badge-layer";
+document.body.appendChild(overlayLayer);
+const activeBadges = new Map();
 
-        if (img.dataset.aiStatus) return false;
-        const rect = img.getBoundingClientRect();
+const imageObserver = new IntersectionObserver(function(entries, observer) {
 
-        const largeEnough =
-            rect.width >= 300 &&
-            rect.height >= 200;
+    entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
 
-        const bounds = rect.top < window.innerHeight &&
-            rect.bottom > 0 &&
-            rect.left < window.innerWidth &&
-            rect.right > 0
+            const img = entry.target;
+            if (img.dataset.aiStatus) {
+                return;
+            }
+            const rect = img.getBoundingClientRect();
 
-        const isValidSrc = img.src && img.src.startsWith("http");
-        return (
-            bounds && largeEnough && isValidSrc
-        );
+            const largeEnough =
+                rect.width >= 240 &&
+                rect.height >= 135;
+
+            const isValidSrc =
+                img.src &&
+                img.src.startsWith("http");
+
+            if (largeEnough && isValidSrc) {
+
+                img.dataset.aiStatus = "pending";
+                processImage(img);
+                observer.unobserve(img);
+            }
+        }
     });
 
-    filtered.forEach(img => {
-  
-    img.dataset.aiStatus = "pending";
-    processImage(img);
-  });
-}
+}, {
+});
 
-async function processImage(img){
-    const url = img.url || img.src;
-    try{
+async function processImage(img) {
+    const url = img.currentSrc || img.src; 
+    
+    try {
+     
         const r = await call({ kind: "aid:infer", url });
-        const t0 = performance.now();
-        const ms = Math.round(performance.now() - t0);
-            console.log(`[Infer] ${url.substring(0, 40)}... => Score: ${r?.ok ? r.score.toFixed(4) : "ERROR"} in ${ms}ms`);
-            
+        
         if (!r || !r.ok) {
             img.dataset.aiStatus = "error";
             return;
         }
 
         const isAi = r.score >= THRESHOLD && !r.degraded;
-        if (isAi == true){
-            img.dataset.aiStatus = "ai"
-        }
-        else{
-            img.dataset.aiStatus = "human"
-        }
+        img.dataset.aiStatus = isAi ? "ai" : "human";
+        
+        attachBadge(r.score, img,isAi);
+        updateVisuals(img, isAi);
 
-        attachBadge(r.score,img,isAi);
-        updateVisuals(img,isAi);
-    }
-    catch(error){
-        console.error("Inference failed for", url, err);
+    } catch (err) {
+        console.error("Inference failed", err);
         img.dataset.aiStatus = "error";
     }
-   
 }
 
 function attachBadge(score, img,isAi){
@@ -68,7 +68,9 @@ function attachBadge(score, img,isAi){
     if (!parent) return;
     
     parent.classList.add("ai-scan-container");
-    
+    const wrapper = document.createElement("div");
+    wrapper.className = "ai-badge-wrapper";
+
     const badge = document.createElement("div");
     badge.className = `ai-confidence-badge ${isAi ? "ai-flagged" : "human-flagged"}`;
     const pct = (score * 100).toFixed(0);
@@ -84,10 +86,42 @@ function attachBadge(score, img,isAi){
         img.classList.toggle("ai-image-grayed");
     });
     
-    parent.appendChild(badge);
-    parent.appendChild(toggleButton)
+    wrapper.appendChild(badge);
+    wrapper.appendChild(toggleButton);
+    overlayLayer.appendChild(wrapper);
+
+    activeBadges.set(img, wrapper);
+    updateBadgePosition(img, wrapper);
 
 }
+
+function updateBadgePosition(img, wrapper) {
+  const rect = img.getBoundingClientRect();
+  
+  const isOffscreen = 
+    rect.bottom <= 0 || 
+    rect.top >= window.innerHeight ||
+    rect.right <= 0 || 
+    rect.left >= window.innerWidth;
+
+  if (rect.width === 0 || rect.height === 0 || isOffscreen) {
+    wrapper.style.opacity = "0";
+    return;
+  }
+  
+  wrapper.style.opacity = "1";
+  wrapper.style.top = `${rect.top + 10}px`;
+  wrapper.style.left = `${rect.left + rect.width - 10}px`;
+}
+
+
+window.addEventListener("scroll", () => {
+  activeBadges.forEach((wrapper, img) => updateBadgePosition(img, wrapper));
+}, { capture: true, passive: true });
+
+window.addEventListener("resize", () => {
+  activeBadges.forEach((wrapper, img) => updateBadgePosition(img, wrapper));
+});
 
 function updateVisuals(img,isAi){
     if (isAi && config.grayOutAi == true){
@@ -97,7 +131,27 @@ function updateVisuals(img,isAi){
         img.classList.remove("ai-image-grayed")
     }
 }
-img_find()
 
+const domObserver = new MutationObserver(function(mutations){
+  mutations.forEach(function(mutation) {
+  
+    mutation.addedNodes.forEach(function(node){
+      if (node.nodeType === 1) {
+        
+        if (node.tagName === "IMG") {
+          imageObserver.observe(node);
+        }
+        if (node.querySelectorAll) {
+          node.querySelectorAll("img").forEach(function(img) {imageObserver.observe(img)});
+        }
+      }
+    });
+  });
+});
+
+
+domObserver.observe(document.body, { childList: true, subtree: true });
+
+document.querySelectorAll("img").forEach(img => imageObserver.observe(img));
 
 
