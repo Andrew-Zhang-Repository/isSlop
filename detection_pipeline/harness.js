@@ -95,3 +95,5 @@ async function processImage(url){
 
 }
 console.table(rows);
+
+

@@ -73,16 +73,22 @@ function attachBadge(score, img,isAi){
     badge.className = `ai-confidence-badge ${isAi ? "ai-flagged" : "human-flagged"}`;
     const pct = (score * 100).toFixed(0);
     badge.textContent = isAi ? `AI ${pct}%` : `Real ${(100 - pct).toFixed(0)}%`;
+
+    const toggleButton = document.createElement("div");
+    toggleButton.className = `toggle-badge`;
+    toggleButton.textContent = "Potential AI image click to view"
     
-    badge.addEventListener("click", (e) => {
+    toggleButton.addEventListener("click", (e) => {
         e.stopPropagation();
         e.preventDefault();
         img.classList.toggle("ai-image-grayed");
     });
     
     parent.appendChild(badge);
+    parent.appendChild(toggleButton)
 
 }
+
 function updateVisuals(img,isAi){
     if (isAi && config.grayOutAi == true){
         img.classList.add("ai-image-grayed");
@@ -92,3 +98,6 @@ function updateVisuals(img,isAi){
     }
 }
 img_find()
+
+
+
