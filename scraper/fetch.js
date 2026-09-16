@@ -91,12 +91,7 @@ function attachBadge(score, img,isAi){
       toggleButton.textContent = "Potential AI image (click to view)";
     }
     
-    toggleButton.addEventListener("click", (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      img.classList.toggle("ai-image-grayed");
-    });
-    
+ 
     wrapper.appendChild(badge);
     wrapper.appendChild(toggleButton);
     overlayLayer.appendChild(wrapper);
@@ -145,21 +140,30 @@ function updateVisuals(img,isAi){
 
 const domObserver = new MutationObserver(function(mutations){
   mutations.forEach(function(mutation) {
-  
-    mutation.addedNodes.forEach(function(node){
-      if (node.nodeType === 1) {
-        
-        if (node.tagName === "IMG") {
-          imageObserver.observe(node);
+    
+      mutation.addedNodes.forEach(function(node){
+        if (node.nodeType === 1) {
+          if (node.tagName === "IMG") {
+            imageObserver.observe(node);
+          }
+          if (node.querySelectorAll) {
+            node.querySelectorAll("img").forEach(function(img) {imageObserver.observe(img)});
+          }
         }
-        if (node.querySelectorAll) {
-          node.querySelectorAll("img").forEach(function(img) {imageObserver.observe(img)});
-        }
-      }
+      });
     });
+  
+    activeBadges.forEach(function(wrapper, img) {
+    if (!img.isConnected) {
+      wrapper.remove();         
+      activeBadges.delete(img); 
+    } else {
+      updateBadgePosition(img, wrapper);
+    }
+    
+
   });
 });
-
 
 domObserver.observe(document.body, { childList: true, subtree: true });
 
