@@ -3,3 +3,5 @@ sieve-ai-image-detector/
 tests/
 w5810_best_fp16.onnx
 test.js
+node_modules/
+

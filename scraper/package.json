@@ -1,0 +1,9 @@
+{
+  "name": "AI Image Detector",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "exifreader": "^4.45.0"
+  }
+  
+}
