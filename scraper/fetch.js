@@ -18,20 +18,19 @@ const imageObserver = new IntersectionObserver(function(entries, observer) {
                 return;
             }
             const rect = img.getBoundingClientRect();
+            const largeEnough = rect.width >= 70 && rect.height >= 70;
+            const isValidSrc = img.src && img.src.startsWith("http");
+            const isLinkedInAvatar = img.src.includes("profile-displayphoto") || 
+                                    img.src.includes("profile-framedphoto") || 
+                                    img.src.includes("company-logo");
 
-            const largeEnough =
-                rect.width >= 240 &&
-                rect.height >= 135;
+            const style = window.getComputedStyle(img);
+            const isCircular = style.borderRadius === "50%";
 
-            const isValidSrc =
-                img.src &&
-                img.src.startsWith("http");
-
-            if (largeEnough && isValidSrc) {
-
+            if (largeEnough && isValidSrc && !isLinkedInAvatar && !isCircular) {
                 img.dataset.aiStatus = "pending";
                 processImage(img);
-                observer.unobserve(img);
+                observer.unobserve(img); 
             }
         }
     });
@@ -66,7 +65,7 @@ async function processImage(img) {
 function attachBadge(score, img,isAi){
     const parent = img.parentElement;
     if (!parent) return;
-    
+    const rect = img.getBoundingClientRect();
     parent.classList.add("ai-scan-container");
     const wrapper = document.createElement("div");
     wrapper.className = "ai-badge-wrapper";
@@ -84,6 +83,18 @@ function attachBadge(score, img,isAi){
         e.stopPropagation();
         e.preventDefault();
         img.classList.toggle("ai-image-grayed");
+    });
+
+    if (rect.width < 250) {
+      toggleButton.textContent = "Toggle";
+    } else {
+      toggleButton.textContent = "Potential AI image (click to view)";
+    }
+    
+    toggleButton.addEventListener("click", (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      img.classList.toggle("ai-image-grayed");
     });
     
     wrapper.appendChild(badge);
