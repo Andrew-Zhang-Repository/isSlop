@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "type": "module",
   "dependencies": {
+    "@contentauth/c2pa-web": "^0.15.0",
+    "c2pa-js": "^0.0.1-security",
     "exifreader": "^4.45.0"
   }
-  
 }

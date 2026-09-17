@@ -16,6 +16,13 @@
     "service_worker": "background.js",
     "type": "module"
   },
+
+  "web_accessible_resources": [
+    {
+      "resources": ["c2pa_bg.wasm"],
+      "matches": ["<all_urls>"]
+    }
+  ],
   
   "content_scripts": [
     {

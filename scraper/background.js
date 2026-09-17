@@ -1,12 +1,6 @@
 import ExifReader from 'exifreader';
 
-async function checkMetadata(imageUrl){
-    try{
-        const response = await fetch(imageUrl);
-        const arrayBuffer = await response.arrayBuffer();
-        const tags = ExifReader.load(arrayBuffer);
-
-        const aiKeywords = [
+const aiKeywords = [
             "midjourney",
             "dall-e",
             "dalle",
@@ -41,6 +35,14 @@ async function checkMetadata(imageUrl){
         ];
 
 
+async function checkMetadata(imageUrl){
+    try{
+        const response = await fetch(imageUrl);
+        const arrayBuffer = await response.arrayBuffer();
+        const tags = ExifReader.load(arrayBuffer);
+        checkByteSignatures(arrayBuffer);
+
+
         const fieldsToCheck = [
             tags['Software']?.description,
             tags['CreatorTool']?.description,
@@ -66,6 +68,26 @@ async function checkMetadata(imageUrl){
         return {detected:false, reason:"No suspicious activity in metadata"};
 
 
+    }
+    catch(error){
+        console.log(error)
+    }
+}
+
+function checkByteSignatures(arrayBuffer) {
+    try {
+    
+        const text = new TextDecoder('utf-8', { fatal: false }).decode(arrayBuffer);
+        for (const sig of aiKeywords) {
+            if (text.includes(sig)) {
+                return { 
+                    detected: true, 
+                    reason: `Byte signature match: found '${sig}'`
+                };
+            }
+        }
+
+        return { detected: false };
     }
     catch(error){
         console.log(error)
