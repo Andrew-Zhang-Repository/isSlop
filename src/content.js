@@ -1,4 +1,7 @@
-import {call} from "../detection_pipeline/harness"
+// Content script: discovery, gating, presentation only. All analysis runs in
+// the offscreen document via the service worker (chrome.runtime messaging) —
+// content scripts are classic (non-module) and subject to the page's CORS, so
+// no imports and no direct fetching of cross-origin images here.
 
 const THRESHOLD = 0.65;
 let config = { grayOutAi: true };
@@ -43,7 +46,7 @@ async function processImage(img) {
     
     try {
      
-        const r = await call({ kind: "aid:infer", url });
+        const r = await chrome.runtime.sendMessage({ kind: "aid:analyze", url });
         
         if (!r || !r.ok) {
             img.dataset.aiStatus = "error";

@@ -2,7 +2,7 @@
 // CORS), decodes, preprocesses to the model's input, and runs ONNX Runtime Web.
 // All computation is local; nothing is ever sent anywhere.
 
-import { sniffMetadata } from "./forensics.js";
+import { sniffMetadata, checkMetadata } from "./forensics.js";
 
 let sessionPromise = null;
 let modelMeta = null;
@@ -60,8 +60,14 @@ async function sessionLogit(session, tensor) {
 let selftest = "n/a";
 
 async function createSession() {
-  const modelFile = await opfsRead(MODEL_FILE);
-  if (!modelFile) throw new Error("no-model");
+  let modelFile = await opfsRead(MODEL_FILE);
+  if (!modelFile) {
+    // Bundled-model build has no setup/OPFS step: fall back to the packaged
+    // weights shipped inside the extension (src/w5810_best_fp16.onnx).
+    const resp = await fetch(chrome.runtime.getURL("w5810_best_fp16.onnx"));
+    if (!resp.ok) throw new Error("no-model");
+    modelFile = await resp.blob();
+  }
   modelMeta = await loadMeta();
   const buf = await modelFile.arrayBuffer();
 
@@ -139,6 +145,51 @@ async function fetchImage(url) {
   const resp = await fetch(url, { credentials: "omit", cache: "force-cache" });
   if (!resp.ok) throw new Error(`fetch ${resp.status}`);
   return resp.blob();
+}
+
+// ---- C2PA content credentials (full manifest reader) ----------------------
+// forensics.js sniffs C2PA *markers* structurally (cheap; runs inside infer()).
+// This is the real @contentauth/c2pa-web reader: it parses and validates the
+// manifest and returns claim_generator, signer, assertions and thumbnail.
+// It runs here (offscreen document), not in the service worker, because
+// c2pa-web needs a Web Worker + WASM, which an MV3 service worker can't create.
+let c2paPromise = null;
+let ReaderRef = null;
+function getC2pa() {
+  return (c2paPromise ||= (async () => {
+    const { createC2pa, Reader } = await import("./vendor/c2pa/c2pa.js");
+    ReaderRef = Reader;
+    // Compile the wasm ourselves and hand the SDK a WebAssembly.Module: this
+    // skips its fetch(url,{integrity}) SRI path and behaves identically under
+    // chrome-extension:// and the http:// harness.
+    const wasm = await WebAssembly.compile(
+      await (await fetch(chrome.runtime.getURL("vendor/c2pa/c2pa_bg.wasm"))).arrayBuffer());
+    return createC2pa({
+      wasmSrc: wasm,
+      // MV3 CSP (script-src 'self') blocks the SDK's default blob: worker, so
+      // host the worker file and pass workerSrc. The location.href base keeps
+      // new URL() valid for both the absolute extension URL and the harness's
+      // root-relative getURL.
+      workerSrc: new URL(chrome.runtime.getURL("vendor/c2pa/c2pa_worker.js"), location.href),
+    });
+  })());
+}
+
+async function readC2pa(url) {
+  const c2pa = await getC2pa();
+  const blob = await fetchImage(url);
+  const reader = await ReaderRef.fromBlob(c2pa, blob.type || "image/jpeg", blob);
+  if (!reader) return { ok: true, found: false };
+  try {
+    return {
+      ok: true,
+      found: true,
+      store: await reader.manifestStore(),
+      active: await reader.activeManifest(),
+    };
+  } finally {
+    await reader.free();
+  }
 }
 
 function imageDataToTensor(data, C, meta) {
@@ -417,13 +468,19 @@ let chain = Promise.resolve();
 async function infer(url) {
   const t0 = performance.now();
   const [session, blob] = await Promise.all([getSession(), fetchImage(url)]);
-
+  let signal = "Metadata suspicions found or c2pa analysis has picked up tampering"
   // High-precision metadata forensics first: a structural marker of AI
   // generation short-circuits inference (score can only go up, never down).
-  const meta = sniffMetadata(new Uint8Array(await blob.arrayBuffer()));
+  const buffer = new Uint8Array(await blob.arrayBuffer());
+  const meta = sniffMetadata(buffer);
+  const author_check = checkMetadata(buffer);
   if (meta.hit) {
     return { ok: true, score: 0.99, ms: Math.round(performance.now() - t0), ep: "metadata", reason: meta.reason };
   }
+  else{
+    signal = "No detected c2pa tampering, or AI authors in metadata"
+  }
+  const detection = author_check.detected;
 
   const img = await decodeRGBA(blob);
   {
@@ -469,7 +526,7 @@ async function infer(url) {
     // ms = model time (both views when TTA fires); msTotal includes fetch,
     // decode and time spent queued behind other images
     return { ok: true, score, ms: msModel, msTotal: Math.round(performance.now() - t0), ep, tta, degraded,
-             quality: { block: +dq.block.toFixed(3), d12: +dq.d12.toFixed(4) } };
+             quality: { block: +dq.block.toFixed(3), d12: +dq.d12.toFixed(4) }, signal, detection};
   }
 }
 
@@ -496,6 +553,12 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     sessionPromise = null;
     getSession()
       .then(() => sendResponse({ ok: true }))
+      .catch((e) => sendResponse({ ok: false, error: String(e?.message || e) }));
+    return true;
+  }
+  if (msg?.kind === "aid:c2pa") {
+    readC2pa(msg.url)
+      .then(sendResponse)
       .catch((e) => sendResponse({ ok: false, error: String(e?.message || e) }));
     return true;
   }

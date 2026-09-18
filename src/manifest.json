@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "AI Image Detector",
+  "version": "1.0.0",
+  "description": "Detects AI-generated images entirely on-device: local ONNX inference, metadata forensics, and C2PA content credentials. No cloud, no data leaves your browser.",
+  "minimum_chrome_version": "124",
+
+  "permissions": ["storage", "offscreen", "unlimitedStorage"],
+  "host_permissions": ["<all_urls>"],
+
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["style.css"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+  }
+}

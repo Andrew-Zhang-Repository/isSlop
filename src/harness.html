@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <script src="vendor/ort/ort.webgpu.min.js"></script>
+    <script src="vendor/exifreader/exif-reader.js"></script>
+    <script type="module" src="harness.js"></script>
+  </head>
+  <body style="font: 13px/1.5 monospace; padding: 16px">
+    <h3>isSlop pipeline harness</h3>
+    <p style="color:#666">
+      Runs the real offscreen.js engine in-page (chrome.* stubbed). Exercises
+      metadata forensics + ONNX inference (<code>aid:infer</code>) and the C2PA
+      reader (<code>aid:c2pa</code>). Add <code>?c2pa=&lt;url&gt;</code> to point
+      the C2PA check at a specific image.
+    </p>
+    <pre id="out"></pre>
+  </body>
+</html>
