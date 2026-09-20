@@ -3,12 +3,8 @@
 //
 //   python -m http.server 8080        (from the repo root)
 //   http://localhost:8080/src/harness.html
-//   http://localhost:8080/src/harness.html?c2pa=/tests/credentialed.jpg
-//
-// It dispatches both detection paths so you can see them fire:
-//   aid:infer -> offscreen.infer() -> forensics.sniffMetadata (metadata + C2PA
-//                markers) -> ONNX model. ep:"metadata" means forensics hit.
-//   aid:c2pa  -> offscreen.readC2pa() -> @contentauth/c2pa-web full manifest.
+
+
 
 const BASE = new URL(".", import.meta.url).pathname; // "/src/" when served from repo root
 
@@ -78,12 +74,7 @@ const verdict = (r) => {
 };
 
 
-// c2pa is checked in infer in offscreen is it not as it takes it from the forensics.js file
-// ---- 1. inference + metadata forensics ------------------------------------
-// infer() ALWAYS runs forensics.js sniffMetadata first (offscreen.js:423):
-// PNG tEXt/iTXt (SD "parameters", ComfyUI "prompt"/"workflow"), JPEG APP11/APP1,
-// and C2PA digitalSourceType URIs. A structural hit short-circuits to 0.99 with
-// ep:"metadata" + reason. ep:"webgpu"/"wasm" means forensics ran and missed.
+// Test
 const FILES = ["/tests/a1.png", "/tests/a2.png", "/tests/h1.png", "/tests/h2.png"];
 const rows = [];
 for (const url of FILES) {
@@ -102,18 +93,3 @@ for (const url of FILES) {
 }
 console.table(rows);
 
-/*
-// ---- 2. C2PA content-credentials reader (@contentauth/c2pa-web) -----------
-// Distinct from the forensics sniffer: this parses + validates the full
-// manifest. Spins up the c2pa Web Worker + WASM on first call. Most plain
-// images carry no manifest (found:false) — that still proves the path runs.
-// Use ?c2pa=<url> to target a Content-Credentials image for a positive read.
-const c2paUrl = new URLSearchParams(location.search).get("c2pa") || FILES[0];
-const c = await call({ kind: "aid:c2pa", url: c2paUrl });
-log(`\nc2pa[${c2paUrl.split("/").pop()}]: ok=${c?.ok} found=${c?.found}${c?.error ? ` error=${c.error}` : ""}`);
-if (c?.found && c.active) {
-  log(`  claim_generator: ${c.active.claim_generator ?? "?"}`);
-  log(`  active manifest:\n${JSON.stringify(c.active, null, 2).slice(0, 1200)}`);
-}
-console.log("c2pa full result:", c);
-*/

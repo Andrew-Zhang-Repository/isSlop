@@ -1,7 +1,4 @@
-// Content script: discovery, gating, presentation only. All analysis runs in
-// the offscreen document via the service worker (chrome.runtime messaging) —
-// content scripts are classic (non-module) and subject to the page's CORS, so
-// no imports and no direct fetching of cross-origin images here.
+
 
 const THRESHOLD = 0.65;
 let config = { grayOutAi: true };
@@ -55,6 +52,13 @@ async function processImage(img) {
 
         const isAi = r.score >= THRESHOLD && !r.degraded;
         img.dataset.aiStatus = isAi ? "ai" : "human";
+
+        if (isAi){
+            config.grayOutAi = true;
+        }
+        else{
+          config.grayOutAi = false;
+        }
         
         attachBadge(r.score, img,isAi);
         updateVisuals(img, isAi);
@@ -80,7 +84,6 @@ function attachBadge(score, img,isAi){
 
     const toggleButton = document.createElement("div");
     toggleButton.className = `toggle-badge`;
-    toggleButton.textContent = "Potential AI image click to view"
     
     toggleButton.addEventListener("click", (e) => {
         e.stopPropagation();
@@ -88,10 +91,12 @@ function attachBadge(score, img,isAi){
         img.classList.toggle("ai-image-grayed");
     });
 
-    if (rect.width < 250) {
-      toggleButton.textContent = "Toggle";
-    } else {
+    if (config.grayOutAi == true) {
+   
       toggleButton.textContent = "Potential AI image (click to view)";
+    }
+    else{
+      toggleButton.textContent = "Grey Out Toggle"
     }
     
  

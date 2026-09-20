@@ -178,7 +178,7 @@ export function checkMetadata(arrayBuffer) {
     for (const f of fields) {
       if (!f) continue;
       const text = f.toLowerCase();
-      const kw = AI_KEYWORDS.find(k => text.includes(k)); // FIX: was .some(fn{...}) -> always false
+      const kw = aiKeywords.find(k => text.includes(k)); // FIX: was .some(fn{...}) -> always false
       if (kw) return { detected: true, reason: `exif:${kw}` };
     }
     return { detected: false, reason: null };
