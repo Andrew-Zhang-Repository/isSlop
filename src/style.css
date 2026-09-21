@@ -72,3 +72,9 @@ img.ai-image-grayed {
 img.ai-image-grayed:hover {
   filter: grayscale(0%) opacity(40%);
 }
+
+.ai-image-whited-out {
+    filter: contrast(0) brightness(10) !important;
+    background-color: #ffffff !important;
+    transition: filter 0.3s ease-in-out;
+}

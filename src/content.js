@@ -1,12 +1,24 @@
 
 
 const THRESHOLD = 0.65;
-let config = { grayOutAi: true };
+let config = { grayOutAi: true, whiteOutAll:false};
 
 const overlayLayer = document.createElement("div");
 overlayLayer.id = "ai-badge-layer";
 document.body.appendChild(overlayLayer);
 const activeBadges = new Map();
+
+
+chrome.storage.onChanged.addListener((changes) => {
+    if (changes.whiteOutAll !== undefined) {
+        config.whiteOutAll = changes.whiteOutAll.newValue;
+    }
+});
+
+chrome.storage.local.get(['whiteOutAll'], (res) => {
+    if (res.whiteOutAll !== undefined) config.whiteOutAll = res.whiteOutAll;
+});
+
 
 const imageObserver = new IntersectionObserver(function(entries, observer) {
 
@@ -28,6 +40,16 @@ const imageObserver = new IntersectionObserver(function(entries, observer) {
             const isCircular = style.borderRadius === "50%";
 
             if (largeEnough && isValidSrc && !isLinkedInAvatar && !isCircular) {
+
+                if (config.whiteOutAll) {
+                    img.dataset.aiStatus = "whited-out";
+                    img.classList.add("ai-image-whited-out");
+                    attachManualRevealBadge(img);
+                    observer.unobserve(img);
+                    return;
+                }
+
+
                 img.dataset.aiStatus = "pending";
                 processImage(img);
                 observer.unobserve(img); 
@@ -93,7 +115,7 @@ function attachBadge(score, img,isAi){
 
     if (config.grayOutAi == true) {
    
-      toggleButton.textContent = "Potential AI image (click to view)";
+      toggleButton.textContent = "Potential AI image (click to this to view)";
     }
     else{
       toggleButton.textContent = "Grey Out Toggle"
@@ -172,6 +194,40 @@ const domObserver = new MutationObserver(function(mutations){
 
   });
 });
+
+
+function attachManualRevealBadge(img) {
+    const parent = img.parentElement;
+    if (!parent) return;
+    parent.classList.add("ai-scan-container");
+    
+    const wrapper = document.createElement("div");
+    wrapper.className = "ai-badge-wrapper";
+
+    const revealBtn = document.createElement("div");
+    revealBtn.className = "toggle-badge";
+    revealBtn.textContent = "Image Hidden. Click to Reveal & Scan.";
+    revealBtn.style.background = "#2b6cb0"; // Make it a distinct blue color
+    
+    revealBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+      
+        img.classList.remove("ai-image-whited-out");
+
+        wrapper.remove();
+        activeBadges.delete(img);
+        
+        img.dataset.aiStatus = "pending";
+        processImage(img);
+    });
+
+    wrapper.appendChild(revealBtn);
+    overlayLayer.appendChild(wrapper);
+
+    activeBadges.set(img, wrapper);
+    updateBadgePosition(img, wrapper);
+}
 
 domObserver.observe(document.body, { childList: true, subtree: true });
 
