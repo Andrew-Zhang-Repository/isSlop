@@ -36,4 +36,4 @@ python -m http.server 8080 --bind 127.0.0.1
 
 
 
-import { sniffMetadata, checkMetaData } from "./forensics.js";
+todo: Custom modular add to global grey out queue, also when clicking on an image when enlarged it bugs out fix that.
