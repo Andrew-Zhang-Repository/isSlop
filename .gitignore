@@ -4,6 +4,5 @@ tests/
 w5810_best_fp16.onnx
 test.js
 node_modules/
-
-# this needs to be regenerat4ed on npm install
+src.zip
 
