@@ -3,7 +3,7 @@
 Tired of seeing purely ai generated images with little soul on websites flooded with them like linkedin and youtube? This extension is for people who are in agreement of this, this also works for websites besides youtube and linkedin.
 
 Everything runs on-device (ONNX inference + metadata forensics + C2PA content
-credentials). Because I will not be going with the pay $5 dollar route in uploading this to chrome store below are instructions on how you can unpack this locally on your chrome browser. The model was taken from https://github.com/Phineas1500/sieve-ai-image-detector. The model is not perfect, and not every image has useful metadata or C2PA markers so model can be inaccurate, there is a white out option for Linkedin and Youtube for everysingle image as a total censorship option. By doing that you'll never see a slop image technically :p.
+credentials). Because I will not be going with the pay $5 dollar route in uploading this to chrome store below are instructions on how you can unpack this locally on your chrome browser. The model was taken from https://github.com/Phineas1500/sieve-ai-image-detector and a lot of logic derived from that project. The model is not perfect, and not every image has useful metadata or C2PA markers so model can be inaccurate, there is a white out option for Linkedin and Youtube for everysingle image as a total censorship option. By doing that you'll never see a slop image technically :p.
 
 ## Installation Guide
 
