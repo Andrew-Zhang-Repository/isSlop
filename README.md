@@ -11,6 +11,10 @@ credentials). Because I will not be going with the pay $5 dollar route in upload
 
 - Then in manage extensions on chrome turn on developer mode
 - Press load unpacked and then used the directory of where you extracted the zip file of the extension
+
+## Classifier Model Information
+
+40 mbs ONNX model that has been quantised to 16 floating point integers. Uses webgpu, and web assembly to load balance to cpu and gpu and convert ONNX graphs to gpu shaders.
 ## Images
 
 <div align="center">
@@ -34,3 +38,4 @@ credentials). Because I will not be going with the pay $5 dollar route in upload
   <img width="533" height="1250" alt="Image" src="https://github.com/user-attachments/assets/072a1023-33bf-4ea2-9785-3b230ebd1aa7" />
   <p><i>White Out Option</i></p>
 </div>
+
