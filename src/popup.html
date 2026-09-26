@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: sans-serif; width: 220px; padding: 15px; }
+        .toggle-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        hr { border: 0; border-top: 1px solid #ccc; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h3>AI Scanner Active On (Refreshes are somtimes required)</h3>
+    <div class="toggle-row">
+        <input type="checkbox" id="runLinkedIn">
+        <label for="runLinkedIn">LinkedIn</label>
+    </div>
+    <div class="toggle-row">
+        <input type="checkbox" id="runYouTube">
+        <label for="runYouTube">YouTube</label>
+    </div>
+    <div class="toggle-row">
+        <input type="checkbox" id="runOthers">
+        <label for="runOthers">All Other Websites</label>
+    </div>
+    
+    <hr>
+    
+    <div class="toggle-row">
+        <input type="checkbox" id="whiteOutToggleBinded">
+        <label for="whiteOutToggleBinded">White-Out All Images For Checked Sites Above</label>
+    </div>
+    <script src="popup.js"></script>
+</body>
+</html>
