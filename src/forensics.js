@@ -20,12 +20,7 @@ function ascii(s) {
   return out;
 }
 
-// C2PA digitalSourceType URIs — only ever appear inside content-credential
-// manifests (JPEG APP11 JUMBF / PNG caBX).
-const C2PA_MARKERS = [
-  { pat: ascii("http://cv.iptc.org/newscodes/digitalsourcetype/trainedAlgorithmicMedia"), reason: "c2pa:trainedAlgorithmicMedia" },
-  { pat: ascii("compositeWithTrainedAlgorithmicMedia"), reason: "c2pa:compositeWithTrainedAlgorithmicMedia" },
-];
+
 
 function indexOfBytes(hay, pat) {
   const n = hay.length - pat.length;
@@ -178,7 +173,7 @@ export function checkMetadata(arrayBuffer) {
     for (const f of fields) {
       if (!f) continue;
       const text = f.toLowerCase();
-      const kw = aiKeywords.find(k => text.includes(k)); // FIX: was .some(fn{...}) -> always false
+      const kw = aiKeywords.find(k => text.includes(k));
       if (kw) return { detected: true, reason: `exif:${kw}` };
     }
     return { detected: false, reason: null };
